@@ -1,0 +1,38 @@
+syntax = "proto3";
+option csharp_namespace = "MeteoMesh.Lite.Proto";
+
+package meteo;
+
+message Measurement {
+  string stationId = 1;
+  string type = 2;        // "temp" | "humidity" | "pressure" | "rain"
+  double value = 3;
+  int64  timestamp = 4;   // unix ms
+}
+
+message SubmitReply { bool ok = 1; }
+
+message QueryRequest {}
+message StationStatus {
+  string stationId = 1;
+  string lastType = 2;
+  double lastValue = 3;
+  int64  lastTs = 4;
+  string state = 5;       // "Active" | "Inactive" | "Suspended"
+}
+message StationList { repeated StationStatus items = 1; }
+
+service StationIngress {
+  rpc SubmitMeasurement(Measurement) returns (SubmitReply);
+}
+
+service LocalNodeData {
+  rpc GetStations(QueryRequest) returns (StationList);
+}
+
+message CommandRequest { string stationId = 1; string command = 2; }
+message CommandReply { bool ok = 1; }
+
+service StationControl {
+  rpc SendCommand(CommandRequest) returns (CommandReply);
+}

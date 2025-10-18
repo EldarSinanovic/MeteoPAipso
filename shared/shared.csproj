@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Grpc.Tools" Version="2.56.0" PrivateAssets="All" />
+    <PackageReference Include="Google.Protobuf" Version="3.25.3" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.56.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Protobuf Include="..\localnode\Protos\measurement.proto" GrpcServices="None" />
+    </ItemGroup>
+
+</Project>

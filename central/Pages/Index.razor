@@ -1,0 +1,35 @@
+@page "/"
+@inject LocalNodeClient Client
+
+<h3>MeteoMesh – Übersicht</h3>
+
+@if (_items is null)
+{
+    <p>Lade...</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr><th>Station</th><th>Typ</th><th>Wert</th><th>Timestamp</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var s in _items)
+        {
+            <tr>
+                <td>@s.StationId</td>
+                <td>@s.LastType</td>
+                <td>@s.LastValue</td>
+                <td>@DateTimeOffset.FromUnixTimeMilliseconds(s.LastTs).ToLocalTime()</td>
+                <td>@s.State</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<MeteoMesh.Lite.Proto.StationStatus>? _items;
+    protected override async Task OnInitializedAsync() =>
+        _items = (await Client.GetStationsAsync()).ToList();
+}
