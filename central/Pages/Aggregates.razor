@@ -1,0 +1,42 @@
+@page "/aggregates"
+@inject LocalNodeClient Client
+
+<h3>Aggregierte Messwerte</h3>
+
+@if (_aggregates is null)
+{
+    <p>Lade...</p>
+}
+else if (_aggregates.Count == 0)
+{
+    <p>Keine Daten gefunden.</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr><th>Sensor</th><th>Anzahl</th><th>Durchschnitt</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var a in _aggregates)
+        {
+            <tr>
+                <td>@a.Type</td>
+                <td>@a.Count</td>
+                <td>@a.Average</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<MeteoMesh.Lite.Proto.SensorAggregate>? _aggregates;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var since = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
+        var items = await Client.GetAggregatedDataAsync(since);
+        _aggregates = items.ToList();
+    }
+}
