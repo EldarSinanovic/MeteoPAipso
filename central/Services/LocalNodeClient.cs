@@ -20,5 +20,12 @@ namespace MeteoMesh.Lite
             var resp = await _client.GetStationsAsync(new QueryRequest());
             return resp.Items;
         }
+
+        public async Task<IReadOnlyList<SensorAggregate>> GetAggregatedDataAsync(long sinceUnixMs)
+        {
+            var req = new AggregationRequest { Since = sinceUnixMs };
+            var resp = await _client.GetAggregatedDataAsync(req);
+            return resp.Items;
+        }
     }
 }

@@ -29,5 +29,29 @@ namespace MeteoMesh.Lite.LocalNode.Services
             }));
             return Task.FromResult(list);
         }
+
+        public override Task<AggregatedData> GetAggregatedData(AggregationRequest req, ServerCallContext ctx)
+        {
+            var since = req.Since;
+            if (since == 0)
+            {
+                // default: last 1 hour
+                since = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
+            }
+
+            var measurements = _store.MeasurementsSince(since);
+            var groups = measurements.GroupBy(m => m.Type);
+
+            var resp = new AggregatedData();
+
+            foreach (var g in groups)
+            {
+                var count = g.LongCount();
+                var avg = g.Average(x => x.Value);
+                resp.Items.Add(new SensorAggregate { Type = g.Key, Count = count, Average = avg });
+            }
+
+            return Task.FromResult(resp);
+        }
     }
 }

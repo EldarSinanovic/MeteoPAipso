@@ -5,7 +5,7 @@ package meteo;
 
 message Measurement {
   string stationId = 1;
-  string type = 2;        // "temp" | "humidity" | "pressure" | "rain"
+  string type = 2;        // "temp" | "humidity" | "pressure" | "lidar" | "rain"
   double value = 3;
   int64  timestamp = 4;   // unix ms
 }
@@ -22,12 +22,27 @@ message StationStatus {
 }
 message StationList { repeated StationStatus items = 1; }
 
+message AggregationRequest {
+  int64 since = 1; // unix ms
+}
+
+message SensorAggregate {
+  string type = 1;
+  int64 count = 2;
+  double average = 3;
+}
+
+message AggregatedData {
+  repeated SensorAggregate items = 1;
+}
+
 service StationIngress {
   rpc SubmitMeasurement(Measurement) returns (SubmitReply);
 }
 
 service LocalNodeData {
   rpc GetStations(QueryRequest) returns (StationList);
+  rpc GetAggregatedData(AggregationRequest) returns (AggregatedData);
 }
 
 message CommandRequest { string stationId = 1; string command = 2; }

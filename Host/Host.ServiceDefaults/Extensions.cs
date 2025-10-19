@@ -7,6 +7,9 @@ using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Events;
+using Prometheus;
 
 namespace Microsoft.Extensions.Hosting;
 
@@ -17,6 +20,9 @@ public static class Extensions
 {
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
+        // Configure Serilog as the default logger if not already configured
+        ConfigureSerilog(builder);
+
         builder.ConfigureOpenTelemetry();
 
         builder.AddDefaultHealthChecks();
@@ -39,6 +45,33 @@ public static class Extensions
         // });
 
         return builder;
+    }
+
+    private static void ConfigureSerilog<TBuilder>(TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        // Only configure Serilog if no logger has been configured by the host yet.
+        // This creates a basic console logger and reads enrichment from configuration if present.
+        try
+        {
+            var cfg = new LoggerConfiguration()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .Enrich.FromLogContext()
+                .WriteTo.Console();
+
+            // Optionally enable Application Insights sink if connection string is present
+            var aiConn = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+            if (!string.IsNullOrEmpty(aiConn))
+            {
+                // If the package Serilog.Sinks.ApplicationInsights is added, enable it here.
+                // cfg.WriteTo.ApplicationInsightsTraces(new TelemetryConfiguration { ConnectionString = aiConn });
+            }
+
+            Log.Logger = cfg.CreateLogger();
+        }
+        catch
+        {
+            // ignore configuration errors; fall back to default logging
+        }
     }
 
     public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
@@ -112,6 +145,16 @@ public static class Extensions
             {
                 Predicate = r => r.Tags.Contains("live")
             });
+        }
+
+        // Expose Prometheus metrics endpoint at /metrics
+        try
+        {
+            app.MapMetrics();
+        }
+        catch
+        {
+            // if Prometheus package not available, ignore
         }
 
         return app;

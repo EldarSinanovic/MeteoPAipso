@@ -25,6 +25,9 @@ namespace MeteoMesh.Lite.LocalNode.Services
                 m.Timestamp,// LastTs
                 state      // State
             ));
+
+            // Add measurement to store for aggregation
+            _store.AddMeasurement(new MeasurementEntry(m.StationId, m.Type, m.Value, m.Timestamp));
             
             Console.WriteLine($"[Ingress] {m.StationId} {m.Type}={m.Value} state={state}");
             return Task.FromResult(new SubmitReply { Ok = true });
