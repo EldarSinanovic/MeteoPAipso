@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Prometheus;
 
 namespace MeteoMesh.Lite.LocalNode
 {
@@ -32,6 +33,11 @@ namespace MeteoMesh.Lite.LocalNode
             builder.Services.AddGrpc();
 
             var app = builder.Build();
+
+            // Map prometheus metrics
+            app.UseRouting();
+            app.UseHttpMetrics();
+            app.MapMetrics();
 
             app.MapGrpcService<StationIngressService>();
             app.MapGrpcService<LocalNodeDataService>();

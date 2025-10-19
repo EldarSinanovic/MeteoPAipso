@@ -11,6 +11,8 @@ public class StationWorker {
     private volatile bool _isRaining = false;
     private double _currentPressure = 1013.25; // default
 
+    private readonly SensorCoordinator _coordinator = new SensorCoordinator();
+
     public StationWorker(StationIngress.StationIngressClient client, string stationId) {
         _client = client; 
         _id = stationId;
@@ -60,6 +62,9 @@ public class StationWorker {
             var rain = _rnd.NextDouble() < 0.2 ? Math.Round(_rnd.NextDouble() * 5, 2) : 0.0; // mm
             await SendMeasurementAsync("lidar", rain);
 
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            _coordinator.ObserveLidar(rain, now);
+
             if (rain > 0) {
                 _isRaining = true;
                 lastRainObserved = DateTimeOffset.UtcNow;
@@ -79,7 +84,7 @@ public class StationWorker {
         var interval = TimeSpan.FromSeconds(4);
 
         while (!token.IsCancellationRequested) {
-            if (_isRaining) {
+            if (_coordinator.ShouldSkipHumidity()) {
                 // skip humidity measurement during rain
                 Console.WriteLine($"[{_id}] humidity skip due to rain");
                 await Task.Delay(interval, token);
@@ -99,7 +104,8 @@ public class StationWorker {
         while (!token.IsCancellationRequested) {
             // adjust interval based on pressure
             var currentPressure = Volatile.Read(ref _currentPressure);
-            var interval = (currentPressure > 950) ? TimeSpan.FromSeconds(baseInterval.TotalSeconds / 2) : baseInterval;
+            _coordinator.UpdatePressure(currentPressure);
+            var interval = _coordinator.GetTemperatureInterval(baseInterval);
 
             var temp = Math.Round(15 + 10 * _rnd.NextDouble(), 1); // 15-25 C
             await SendMeasurementAsync("temperature", temp);
