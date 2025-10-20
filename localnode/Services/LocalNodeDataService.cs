@@ -19,14 +19,19 @@ namespace MeteoIpso.LocalNode.Services
         public override Task<StationList> GetStations(QueryRequest req, ServerCallContext ctx)
         {
             var list = new StationList();
-            list.Items.AddRange(_store.All().Select(s => new Proto.StationStatus
+            
+            // GEÄNDERT: Verwende AllSensors statt All, um alle Sensoren zu zeigen
+            var allSensors = _store.AllSensors();
+            
+            list.Items.AddRange(allSensors.Select(s => new Proto.StationStatus
             {
                 StationId = s.StationId,
-                LastType = s.LastType,
-                LastValue = s.LastValue,
-                LastTs = s.LastTs,
+                LastType = s.SensorType,
+                LastValue = s.Value,
+                LastTs = s.Timestamp,
                 State = s.State
             }));
+            
             return Task.FromResult(list);
         }
 

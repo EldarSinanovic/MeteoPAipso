@@ -1,0 +1,28 @@
+{
+  "profiles": {
+    "Station-001": {
+      "commandName": "Project",
+      "commandLineArgs": "station-001",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    },
+    "Station-002": {
+      "commandName": "Project",
+      "commandLineArgs": "station-002",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    },
+    "Station-003": {
+      "commandName": "Project",
+      "commandLineArgs": "station-003",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

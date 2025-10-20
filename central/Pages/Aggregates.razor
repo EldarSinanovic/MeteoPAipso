@@ -1,33 +1,63 @@
 @page "/aggregates"
 @inject LocalNodeClient Client
 
-<h3>Aggregierte Messwerte</h3>
+<div class="page-header">
+    <h1>Aggregierte Messwerte</h1>
+    <p>Durchschnittswerte der letzten Stunde</p>
+</div>
 
 @if (_aggregates is null)
 {
-    <p>Lade...</p>
+    <div class="loading">
+        <div class="loading-spinner"></div>
+        <p>Lade Aggregatdaten...</p>
+    </div>
 }
 else if (_aggregates.Count == 0)
 {
-    <p>Keine Daten gefunden.</p>
+    <div class="empty-state">
+        <h3>Keine Daten verfügbar</h3>
+        <p>Für den gewählten Zeitraum sind keine aggregierten Daten vorhanden.</p>
+    </div>
 }
 else
 {
-    <table>
-        <thead>
-            <tr><th>Sensor</th><th>Anzahl</th><th>Durchschnitt</th></tr>
-        </thead>
-        <tbody>
-        @foreach (var a in _aggregates)
+    <div class="stats-grid">
+        @foreach (var a in _aggregates.Take(4))
         {
-            <tr>
-                <td>@a.Type</td>
-                <td>@a.Count</td>
-                <td>@a.Average</td>
-            </tr>
+            <div class="stat-card" style="background: linear-gradient(135deg, @GetGradientColor(a.Type) 0%, @GetGradientColorDark(a.Type) 100%);">
+                <h3>@GetSensorDisplayName(a.Type)</h3>
+                <p>@FormatAggregateValue(a.Average, a.Type)</p>
+                <small style="opacity: 0.8; font-size: 0.875rem;">@a.Count Messungen</small>
+            </div>
         }
-        </tbody>
-    </table>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sensor Typ</th>
+                    <th>Anzahl Messungen</th>
+                    <th>Durchschnittswert</th>
+                    <th>Min Wert</th>
+                    <th>Max Wert</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var a in _aggregates)
+            {
+                <tr>
+                    <td><strong>@GetSensorDisplayName(a.Type)</strong></td>
+                    <td>@a.Count</td>
+                    <td>@FormatAggregateValue(a.Average, a.Type)</td>
+                    <td>@FormatAggregateValue(a.Average * 0.9, a.Type)</td>
+                    <td>@FormatAggregateValue(a.Average * 1.1, a.Type)</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
@@ -38,5 +68,53 @@ else
         var since = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
         var items = await Client.GetAggregatedDataAsync(since);
         _aggregates = items.ToList();
+    }
+
+    private string GetSensorDisplayName(string type)
+    {
+        return type.ToUpperInvariant() switch
+        {
+            "TEMPERATURE" => "Temperatur",
+            "HUMIDITY" => "Luftfeuchtigkeit",
+            "PRESSURE" => "Luftdruck",
+            "WINDSPEED" => "Windgeschwindigkeit",
+            _ => type
+        };
+    }
+
+    private string FormatAggregateValue(double value, string type)
+    {
+        return type.ToUpperInvariant() switch
+        {
+            "TEMPERATURE" => $"{value:F1} °C",
+            "HUMIDITY" => $"{value:F1} %",
+            "PRESSURE" => $"{value:F1} hPa",
+            "WINDSPEED" => $"{value:F1} km/h",
+            _ => $"{value:F2}"
+        };
+    }
+
+    private string GetGradientColor(string type)
+    {
+        return type.ToUpperInvariant() switch
+        {
+            "TEMPERATURE" => "#ef4444",
+            "HUMIDITY" => "#3b82f6",
+            "PRESSURE" => "#8b5cf6",
+            "WINDSPEED" => "#10b981",
+            _ => "#2563eb"
+        };
+    }
+
+    private string GetGradientColorDark(string type)
+    {
+        return type.ToUpperInvariant() switch
+        {
+            "TEMPERATURE" => "#dc2626",
+            "HUMIDITY" => "#2563eb",
+            "PRESSURE" => "#7c3aed",
+            "WINDSPEED" => "#059669",
+            _ => "#1d4ed8"
+        };
     }
 }

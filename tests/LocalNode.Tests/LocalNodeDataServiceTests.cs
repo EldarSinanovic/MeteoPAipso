@@ -6,7 +6,6 @@ using MeteoIpso.LocalNode.State;
 using MeteoIpso.LocalNode.Services;
 using System.Linq;
 using Grpc.Core;
-using MeteoIpso.Proto;
 
 namespace LocalNode.Tests
 {
@@ -23,7 +22,7 @@ namespace LocalNode.Tests
         protected override Metadata ResponseTrailersCore => new Metadata();
         protected override Status StatusCore { get; set; }
         protected override WriteOptions? WriteOptionsCore { get; set; }
-        protected override AuthContext AuthContextCore => new AuthContext("", new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>());
+        protected override AuthContext AuthContextCore => new AuthContext("", new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<AuthProperty>>());
 
         public static ServerCallContext Create() => new TestServerCallContext();
     }
@@ -41,7 +40,7 @@ namespace LocalNode.Tests
             store.AddMeasurement(new MeasurementEntry("s2", "humidity", 50, now - 2000));
 
             var svc = new LocalNodeDataService(store);
-            var req = new AggregationRequest { Since = now - 20000 };
+            var req = new MeteoIpso.Proto.AggregationRequest { Since = now - 20000 };
 
             var resp = await svc.GetAggregatedData(req, TestServerCallContext.Create());
 

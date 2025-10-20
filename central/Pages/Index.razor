@@ -1,35 +1,156 @@
 @page "/"
 @inject LocalNodeClient Client
+@implements IDisposable
 
-<h3>MeteoIpso – Übersicht</h3>
+<div class="page-header">
+    <h1>Stationen Übersicht</h1>
+    <p>Aktuelle Messwerte aller registrierten Wetterstationen</p>
+</div>
 
 @if (_items is null)
 {
-    <p>Lade...</p>
+    <div class="loading">
+        <div class="loading-spinner"></div>
+        <p>Lade Stationsdaten...</p>
+    </div>
+}
+else if (_items.Count == 0)
+{
+    <div class="empty-state">
+        <h3>Keine Stationen gefunden</h3>
+        <p>Es sind derzeit keine Wetterstationen registriert.</p>
+    </div>
 }
 else
 {
-    <table>
-        <thead>
-            <tr><th>Station</th><th>Typ</th><th>Wert</th><th>Timestamp</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-        @foreach (var s in _items)
-        {
-            <tr>
-                <td>@s.StationId</td>
-                <td>@s.LastType</td>
-                <td>@s.LastValue</td>
-                <td>@DateTimeOffset.FromUnixTimeMilliseconds(s.LastTs).ToLocalTime()</td>
-                <td>@s.State</td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Aktive Stationen</h3>
+            <p>@_stationCount</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <h3>Gesamt Sensoren</h3>
+            <p>@_items.Count</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <h3>Sensor Typen</h3>
+            <p>@_items.Select(s => s.LastType).Distinct().Count()</p>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Station ID</th>
+                    <th>Sensor Typ</th>
+                    <th>Messwert</th>
+                    <th>Zeitstempel</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var group in _groupedItems)
+            {
+                var isFirstInGroup = true;
+                @foreach (var s in group.Value)
+                {
+                    <tr class="@(isFirstInGroup ? "station-group-start" : "")">
+                        @if (isFirstInGroup)
+                        {
+                            <td rowspan="@group.Value.Count" class="station-id-cell">
+                                <strong>@s.StationId</strong>
+                                <span class="sensor-count">@group.Value.Count Sensoren</span>
+                            </td>
+                        }
+                        <td>
+                            <span class="sensor-badge">@s.LastType</span>
+                        </td>
+                        <td><strong>@FormatValue(s.LastValue, s.LastType)</strong></td>
+                        <td>@DateTimeOffset.FromUnixTimeMilliseconds(s.LastTs).ToLocalTime().ToString("HH:mm:ss")</td>
+                        <td>
+                            <span class="status-badge @GetStatusClass(s.State)">
+                                @s.State
+                            </span>
+                        </td>
+                    </tr>
+                    isFirstInGroup = false;
+                }
+            }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
     List<MeteoIpso.Proto.StationStatus>? _items;
-    protected override async Task OnInitializedAsync() =>
-        _items = (await Client.GetStationsAsync()).ToList();
+    Dictionary<string, List<MeteoIpso.Proto.StationStatus>> _groupedItems = new();
+    int _stationCount = 0;
+    System.Threading.Timer? _timer;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+        
+        // Auto-refresh alle 3 Sekunden
+        _timer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await RefreshData();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+    }
+
+    private async Task RefreshData()
+    {
+        try
+        {
+            _items = (await Client.GetStationsAsync()).ToList();
+            
+            // Gruppiere nach Station ID
+            _groupedItems = _items
+                .GroupBy(s => s.StationId)
+                .OrderBy(g => g.Key)
+                .ToDictionary(
+                    g => g.Key, 
+                    g => g.OrderBy(s => s.LastType).ToList()
+                );
+            
+            _stationCount = _groupedItems.Count;
+        }
+        catch (Exception)
+        {
+            // Fehler ignorieren, beim nächsten Refresh erneut versuchen
+        }
+    }
+
+    private string GetStatusClass(string state)
+    {
+        return state.ToUpperInvariant() switch
+        {
+            "ACTIVE" => "active",
+            "INACTIVE" => "inactive",
+            _ => "warning"
+        };
+    }
+
+    private string FormatValue(double value, string type)
+    {
+        return type.ToUpperInvariant() switch
+        {
+            "TEMPERATURE" => $"{value:F1} °C",
+            "HUMIDITY" => $"{value:F1} %",
+            "PRESSURE" => $"{value:F1} hPa",
+            "LIDAR" => $"{value:F2} mm",
+            "WINDSPEED" => $"{value:F1} km/h",
+            _ => $"{value:F2}"
+        };
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
 }

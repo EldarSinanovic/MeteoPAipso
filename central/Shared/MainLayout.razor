@@ -1,17 +1,37 @@
 @namespace MeteoMesh.Lite.Shared
 @inherits LayoutComponentBase
 
-<div class="sidebar">
-    <nav>
-        <ul>
-            <li><a href="/">Übersicht</a></li>
-            <li><a href="/aggregates">Aggregates</a></li>
-        </ul>
-    </nav>
-</div>
+<div class="app-container">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MeteoIpso</h1>
+            <p>Wetter Monitoring</p>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="/" class="@(IsActive("/") ? "active" : "")">
+                    Übersicht
+                </a></li>
+                <li><a href="/aggregates" class="@(IsActive("/aggregates") ? "active" : "")">
+                    Aggregates
+                </a></li>
+            </ul>
+        </nav>
+    </div>
 
-<div class="main">
-    <div class="content px-4">
-        @Body
+    <div class="main">
+        <div class="content">
+            @Body
+        </div>
     </div>
 </div>
+
+@code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private bool IsActive(string path)
+    {
+        var currentPath = new Uri(NavigationManager.Uri).AbsolutePath;
+        return currentPath == path;
+    }
+}

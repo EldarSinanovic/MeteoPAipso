@@ -1,7 +1,6 @@
 using System;
 using Xunit;
 using MeteoIpso.LocalNode.Validation;
-using MeteoIpso.Proto;
 
 namespace LocalNode.Tests
 {
@@ -24,7 +23,7 @@ namespace LocalNode.Tests
         [InlineData("lidar", 60.0, false)]       // unrealistic rain
         public void Value_ranges_are_validated(string type, double value, bool shouldBeValid)
         {
-            var m = new Measurement
+            var m = new MeteoIpso.Proto.Measurement
             {
                 StationId = _validStationId,
                 Type = type,
@@ -39,7 +38,7 @@ namespace LocalNode.Tests
         [Fact]
         public void Future_timestamp_is_rejected()
         {
-            var m = new Measurement
+            var m = new MeteoIpso.Proto.Measurement
             {
                 StationId = _validStationId,
                 Type = "temperature",
@@ -55,7 +54,7 @@ namespace LocalNode.Tests
         [Fact]
         public void Old_measurements_are_rejected()
         {
-            var m = new Measurement
+            var m = new MeteoIpso.Proto.Measurement
             {
                 StationId = _validStationId,
                 Type = "temperature",
@@ -74,7 +73,7 @@ namespace LocalNode.Tests
         [InlineData(" ")]
         public void StationId_is_required(string? stationId)
         {
-            var m = new Measurement
+            var m = new MeteoIpso.Proto.Measurement
             {
                 StationId = stationId,
                 Type = "temperature",

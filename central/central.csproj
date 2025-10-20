@@ -22,8 +22,4 @@
     <ProjectReference Include="..\shared\shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Protobuf Include="..\shared\Proto\measurement.proto" GrpcServices="Client" Link="Proto\measurement.proto" />
-  </ItemGroup>
-
 </Project>
