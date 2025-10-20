@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
-using MeteoMesh.Lite.Proto;
-using MeteoMesh.Lite.LocalNode.State;
-using MeteoMesh.Lite.LocalNode.Validation;
+using MeteoIpso.Proto;
+using MeteoIpso.LocalNode.State;
+using MeteoIpso.LocalNode.Validation;
 using Prometheus;
 
-namespace MeteoMesh.Lite.LocalNode.Services
+namespace MeteoIpso.LocalNode.Services
 {
     public class StationIngressService : StationIngress.StationIngressBase
     {

@@ -3,6 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
+    <RootNamespace>MeteoIpso.LocalNode.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\localnode\localnode.csproj" />
-    <ProjectReference Include="..\..\shared\shared.csproj" Condition="Exists('..\\..\\shared\\shared.csproj')" />
+    <ProjectReference Include="..\..\shared\shared.csproj" />
   </ItemGroup>
-
 </Project>

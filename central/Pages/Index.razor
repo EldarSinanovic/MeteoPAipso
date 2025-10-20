@@ -1,7 +1,7 @@
 @page "/"
 @inject LocalNodeClient Client
 
-<h3>MeteoMesh – Übersicht</h3>
+<h3>MeteoIpso – Übersicht</h3>
 
 @if (_items is null)
 {
@@ -29,7 +29,7 @@ else
 }
 
 @code {
-    List<MeteoMesh.Lite.Proto.StationStatus>? _items;
+    List<MeteoIpso.Proto.StationStatus>? _items;
     protected override async Task OnInitializedAsync() =>
         _items = (await Client.GetStationsAsync()).ToList();
 }

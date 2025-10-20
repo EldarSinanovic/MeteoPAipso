@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 
-namespace MeteoMesh.Lite.LocalNode.Validation
+namespace MeteoIpso.LocalNode.Validation
 {
     public record ValidationResult(bool IsValid, string? ErrorMessage = null);
 
     public interface IMeasurementValidator
     {
-        ValidationResult Validate(MeteoMesh.Lite.Proto.Measurement measurement);
+        ValidationResult Validate(MeteoIpso.Proto.Measurement measurement);
     }
 
     public class MeasurementValidator : IMeasurementValidator

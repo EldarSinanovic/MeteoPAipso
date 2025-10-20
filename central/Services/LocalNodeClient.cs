@@ -1,9 +1,9 @@
 using Grpc.Net.Client;
-using MeteoMesh.Lite.Proto;
+using MeteoIpso.Proto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace MeteoMesh.Lite
+namespace MeteoIpso
 {
     public class LocalNodeClient
     {

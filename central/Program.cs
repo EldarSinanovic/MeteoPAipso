@@ -2,7 +2,7 @@ using Serilog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MeteoMesh.Lite;
+using MeteoIpso;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()

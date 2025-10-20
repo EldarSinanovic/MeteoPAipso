@@ -1,11 +1,11 @@
 using Grpc.Core;
-using MeteoMesh.Lite.Proto;
-using MeteoMesh.Lite.LocalNode.State;
+using MeteoIpso.Proto;
+using MeteoIpso.LocalNode.State;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MeteoMesh.Lite.LocalNode.Services
+namespace MeteoIpso.LocalNode.Services
 {
     public class LocalNodeDataService : LocalNodeData.LocalNodeDataBase
     {

@@ -1,5 +1,6 @@
 using Grpc.Net.Client;
-using MeteoMesh.Lite.Proto;
+using MeteoIpso.Proto;
+using MeteoIpso.Station;
 
 var ch = GrpcChannel.ForAddress("http://localhost:5001");
 var client = new StationIngress.StationIngressClient(ch);

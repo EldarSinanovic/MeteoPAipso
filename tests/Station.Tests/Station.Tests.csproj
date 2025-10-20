@@ -3,6 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
+    <RootNamespace>MeteoIpso.Station.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,5 +15,4 @@
   <ItemGroup>
     <ProjectReference Include="..\..\station\station.csproj" />
   </ItemGroup>
-
 </Project>

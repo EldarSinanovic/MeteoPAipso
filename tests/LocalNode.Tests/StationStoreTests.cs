@@ -1,6 +1,6 @@
 using System;
 using Xunit;
-using MeteoMesh.Lite.LocalNode.State;
+using MeteoIpso.LocalNode.State;
 using System.Linq;
 
 namespace LocalNode.Tests

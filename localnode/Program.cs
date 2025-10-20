@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MeteoMesh.Lite.LocalNode.Services;
-using MeteoMesh.Lite.LocalNode.State;
+using MeteoIpso.LocalNode.Services;
+using MeteoIpso.LocalNode.State;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Prometheus;
 
-namespace MeteoMesh.Lite.LocalNode
+namespace MeteoIpso.LocalNode
 {
     public class Program
     {
@@ -33,11 +32,6 @@ namespace MeteoMesh.Lite.LocalNode
             builder.Services.AddGrpc();
 
             var app = builder.Build();
-
-            // Map prometheus metrics
-            app.UseRouting();
-            app.UseHttpMetrics();
-            app.MapMetrics();
 
             app.MapGrpcService<StationIngressService>();
             app.MapGrpcService<LocalNodeDataService>();

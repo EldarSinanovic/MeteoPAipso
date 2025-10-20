@@ -4,16 +4,20 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>MeteoIpso</RootNamespace>
   </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Grpc.Tools" Version="2.56.0" PrivateAssets="All" />
-    <PackageReference Include="Google.Protobuf" Version="3.25.3" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.56.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.25.1" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.59.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.59.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
 
-    <ItemGroup>
-      <Protobuf Include="..\localnode\Protos\measurement.proto" GrpcServices="None" />
-    </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="Proto\measurement.proto" GrpcServices="None" />
+  </ItemGroup>
 
 </Project>

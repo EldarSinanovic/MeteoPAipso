@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MeteoMesh.Lite.LocalNode.State
+namespace MeteoIpso.LocalNode.State
 {
     public record StationStatus(string StationId, string LastType, double LastValue, long LastTs, string State);
     public record MeasurementEntry(string StationId, string Type, double Value, long Timestamp);

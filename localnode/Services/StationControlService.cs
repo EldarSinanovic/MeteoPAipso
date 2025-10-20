@@ -1,10 +1,12 @@
 using Grpc.Core;
-using MeteoMesh.Lite.Proto;
+using MeteoIpso.Proto;
 using System.Threading.Tasks;
 
-public class StationControlService : StationControl.StationControlBase {
-    public override Task<CommandReply> SendCommand(CommandRequest request, ServerCallContext context) {
-        // Stub implementation for future command handling
+public class StationControlService : StationControl.StationControlBase
+{
+    public override Task<CommandReply> SendCommand(CommandRequest request, ServerCallContext context)
+    {
+        // Placeholder for station control commands
         return Task.FromResult(new CommandReply { Ok = true });
     }
 }

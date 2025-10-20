@@ -1,18 +1,19 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
-using MeteoMesh.Lite.LocalNode.State;
-using MeteoMesh.Lite.LocalNode.Services;
+using MeteoIpso.LocalNode.State;
+using MeteoIpso.LocalNode.Services;
 using System.Linq;
 using Grpc.Core;
-using MeteoMesh.Lite.Proto;
-using System.Threading.Tasks;
+using MeteoIpso.Proto;
 
 namespace LocalNode.Tests
 {
-    internal class TestServerCallContext : ServerCallContext
+    public class TestServerCallContext : ServerCallContext
     {
-        protected override Task WriteResponseHeadersAsync(Metadata responseHeaders) => Task.CompletedTask;
-        protected override ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options) => null!;
+        protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders) => Task.CompletedTask;
+        protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options) => null!;
         protected override string MethodCore => "test";
         protected override string HostCore => "localhost";
         protected override string PeerCore => "peer";

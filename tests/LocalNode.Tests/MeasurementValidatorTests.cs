@@ -1,7 +1,7 @@
 using System;
 using Xunit;
-using MeteoMesh.Lite.LocalNode.Validation;
-using MeteoMesh.Lite.Proto;
+using MeteoIpso.LocalNode.Validation;
+using MeteoIpso.Proto;
 
 namespace LocalNode.Tests
 {
