@@ -1,4 +1,4 @@
-# MeteoMesh Lite
+# MeteoIpso
 
 ## Overview
 
