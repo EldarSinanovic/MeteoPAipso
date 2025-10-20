@@ -9,6 +9,10 @@ on:
       - master
   workflow_dispatch: {}
 
+env:
+  AZURE_WEBAPP_NAME_STAGING: meteomesh-staging  # change to your staging app name
+  AZURE_WEBAPP_NAME_PROD: meteomesh-prod      # change to your prod app name
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -27,57 +31,120 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: .NET Tests
+          path: '**/TestResults/*.trx'
+          reporter: dotnet-trx
 
       - name: Build Docker image
         if: success()
         run: |
-          docker build -t meteomesh/station:staging -f station/Dockerfile . || true
+          docker build -t meteomesh/station:${{ github.sha }} -f station/Dockerfile .
+          docker build -t meteomesh/localnode:${{ github.sha }} -f localnode/Dockerfile .
+          docker build -t meteomesh/central:${{ github.sha }} -f central/Dockerfile .
 
-      - name: Login to Docker Hub
-        if: secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN
-        uses: docker/login-action@v2
+      - name: Login to Azure
+        uses: azure/login@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Push image to Docker Hub
-        if: secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN
+      - name: Login to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Push to ACR
         run: |
-          docker tag meteomesh/station:staging ${{ secrets.DOCKERHUB_USERNAME }}/meteomesh-station:staging || true
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/meteomesh-station:staging || true
+          docker tag meteomesh/station:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/station:${{ github.sha }}
+          docker tag meteomesh/localnode:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/localnode:${{ github.sha }}
+          docker tag meteomesh/central:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/central:${{ github.sha }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/station:${{ github.sha }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/localnode:${{ github.sha }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/central:${{ github.sha }}
 
   deploy-to-staging:
     needs: build-and-test
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - name: Manual approval
-        uses: chrismckenzie/approval-action@v2
+      - name: Login to Azure
+        uses: azure/login@v1
         with:
-          reviewers: 'team'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to staging (placeholder)
-        run: echo "Deploy to staging - replace with your deployment script"
+      - name: Deploy to staging slot
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME_STAGING }}
+          images: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/central:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/localnode:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/meteomesh/station:${{ github.sha }}
+
+      - name: Health check staging
+        run: |
+          echo "Waiting for deployment to stabilize..."
+          sleep 30
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.AZURE_WEBAPP_NAME_STAGING }}.azurewebsites.net/health)
+          if [ $STATUS_CODE -ne 200 ]; then
+            echo "Health check failed with status $STATUS_CODE"
+            exit 1
+          fi
 
   deploy-to-prod:
     needs: deploy-to-staging
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://example.com
+      url: https://${{ env.AZURE_WEBAPP_NAME_PROD }}.azurewebsites.net
     steps:
-      - name: Manual approval
-        uses: chrismckenzie/approval-action@v2
+      - name: Login to Azure
+        uses: azure/login@v1
         with:
-          reviewers: 'ops'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to production (placeholder)
-        run: echo "Deploy to production - replace with your deployment script"
+      - name: Create backup slot
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp deployment slot create --name ${{ env.AZURE_WEBAPP_NAME_PROD }} --resource-group meteomesh --slot backup || true
 
-  rollback-on-failure:
-    if: failure()
+      - name: Swap staging to production
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp deployment slot swap --name ${{ env.AZURE_WEBAPP_NAME_PROD }} --resource-group meteomesh --slot staging --target-slot production
+
+      - name: Health check production
+        run: |
+          echo "Waiting for deployment to stabilize..."
+          sleep 30
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.AZURE_WEBAPP_NAME_PROD }}.azurewebsites.net/health)
+          if [ $STATUS_CODE -ne 200 ]; then
+            echo "Health check failed! Rolling back..."
+            az webapp deployment slot swap --name ${{ env.AZURE_WEBAPP_NAME_PROD }} --resource-group meteomesh --slot backup --target-slot production
+            exit 1
+          fi
+
+  cleanup:
+    needs: [deploy-to-prod]
     runs-on: ubuntu-latest
+    if: always()
     steps:
-      - name: Rollback (placeholder)
-        run: echo "Rollback to last known good deployment - implement your rollback strategy here"
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Cleanup old images
+        run: |
+          az acr repository show-tags --name ${{ secrets.ACR_NAME }} --repository meteomesh/station --orderby time_desc --top 10 --output tsv | tail -n +4 | xargs -I% az acr repository delete --name ${{ secrets.ACR_NAME }} --image meteomesh/station:% --yes || true
+          az acr repository show-tags --name ${{ secrets.ACR_NAME }} --repository meteomesh/localnode --orderby time_desc --top 10 --output tsv | tail -n +4 | xargs -I% az acr repository delete --name ${{ secrets.ACR_NAME }} --image meteomesh/localnode:% --yes || true
+          az acr repository show-tags --name ${{ secrets.ACR_NAME }} --repository meteomesh/central --orderby time_desc --top 10 --output tsv | tail -n +4 | xargs -I% az acr repository delete --name ${{ secrets.ACR_NAME }} --image meteomesh/central:% --yes || true

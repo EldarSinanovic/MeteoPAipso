@@ -1,0 +1,45 @@
+@startuml
+title MeteoMesh CI/CD Pipeline
+
+skinparam activity {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+|GitHub|
+start
+:Push to master;
+
+|CI Pipeline|
+:Build Solution;
+:Run Tests;
+if (Tests Pass?) then (yes)
+  :Build Docker Images;
+  :Push to ACR;
+else (no)
+  stop
+endif
+
+|Staging|
+:Deploy to Staging;
+if (Health Check OK?) then (yes)
+  :Manual Approval;
+else (no)
+  stop
+endif
+
+|Production|
+:Create Backup Slot;
+:Swap to Production;
+if (Health Check OK?) then (yes)
+  :Deployment Success;
+else (no)
+  :Auto-Rollback;
+endif
+
+|Cleanup|
+:Remove Old Images;
+stop
+
+@enduml
